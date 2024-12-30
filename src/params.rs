@@ -20,11 +20,6 @@ pub struct ChatParams {
     /// How many chat completion choices to generate for each input message.
     /// Defaults to 1.
     pub n_choice: Option<u64>,
-    // /// Whether to stream the results as they are generated. Useful for chatbots.
-    // /// Defaults to false.
-    // pub stream: Option<bool>,
-    // /// Options for streaming response. Only set this when you set `stream: true`.
-    // pub stream_options: Option<StreamOptions>,
     /// A list of tokens at which to stop generation. If None, no stop tokens are used. Up to 4 sequences where the API will stop generating further tokens.
     /// Defaults to None
     pub stop: Option<Vec<String>>,
