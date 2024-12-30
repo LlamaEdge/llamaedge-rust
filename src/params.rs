@@ -1,3 +1,5 @@
+//! Parameters for the chat completion API.
+
 use endpoints::chat::{ChatResponseFormat, Tool, ToolChoice};
 
 /// Parameters for the chat completion API.

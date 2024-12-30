@@ -1,3 +1,5 @@
+//! Error types.
+
 use thiserror::Error;
 
 /// Error types for the Llama Core library.
