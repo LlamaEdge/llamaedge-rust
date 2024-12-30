@@ -9,10 +9,12 @@ use futures::StreamExt;
 use params::ChatParams;
 use url::Url;
 
+/// Client for the LlamaEdge API.
 pub struct Client {
     server_base_url: Url,
 }
 impl Client {
+    /// Create a new client.
     pub fn new(server_base_url: impl AsRef<str>) -> Result<Self, LlamaEdgeError> {
         let url_str = server_base_url.as_ref().trim_end_matches('/');
         match Url::parse(url_str) {
@@ -25,10 +27,12 @@ impl Client {
         }
     }
 
+    /// Get the server base URL.
     pub fn server_base_url(&self) -> &Url {
         &self.server_base_url
     }
 
+    /// Send a chat completion request.
     pub async fn chat(
         &self,
         chat_history: &[ChatCompletionRequestMessage],
@@ -78,6 +82,7 @@ impl Client {
         }
     }
 
+    /// Send a chat completion request with streaming.
     pub async fn chat_stream(
         &self,
         chat_history: &[ChatCompletionRequestMessage],
@@ -131,6 +136,7 @@ impl Client {
         Ok(stream)
     }
 
+    /// Transcribe an audio file.
     pub fn transcribe(&self, _audio: impl AsRef<str>) -> Result<String, LlamaEdgeError> {
         unimplemented!("Not implemented");
     }

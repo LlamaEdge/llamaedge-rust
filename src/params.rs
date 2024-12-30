@@ -1,5 +1,6 @@
 use endpoints::chat::{ChatResponseFormat, Tool, ToolChoice};
 
+/// Parameters for the chat completion API.
 #[derive(Debug, Clone)]
 pub struct ChatParams {
     /// The model to use for generating completions.
