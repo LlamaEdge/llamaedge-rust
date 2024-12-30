@@ -1,6 +1,6 @@
 [package]
 name = "llamaedge"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Liu Xin"]
 edition = "2021"
 description = "A library for interacting with LlamaEdge API"
