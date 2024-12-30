@@ -5,7 +5,7 @@ use endpoints::chat::{
     ChatCompletionObject, ChatCompletionRequest, ChatCompletionRequestMessage, StreamOptions,
 };
 use error::LlamaEdgeError;
-use futures::StreamExt;
+use futures::{stream::TryStream, StreamExt};
 use params::ChatParams;
 use url::Url;
 
@@ -88,7 +88,7 @@ impl Client {
         chat_history: &[ChatCompletionRequestMessage],
         params: &ChatParams,
     ) -> Result<
-        impl futures::stream::TryStream<Item = Result<String, LlamaEdgeError>, Error = LlamaEdgeError>,
+        impl TryStream<Item = Result<String, LlamaEdgeError>, Error = LlamaEdgeError>,
         LlamaEdgeError,
     > {
         if chat_history.is_empty() {
