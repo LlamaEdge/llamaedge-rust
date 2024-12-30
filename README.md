@@ -1,5 +1,7 @@
 # Rust API for LlamaEdge
 
+The `llamaedge` crate provides convenient access to the LlamaEdge REST API from any Rust application. The crate includes type definitions for all request params and response fields, and offers both synchronous and asynchronous clients.
+
 > [!IMPORTANT]
 > This project is still in the early stages of development. The API is not stable and may change.
 
