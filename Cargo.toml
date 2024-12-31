@@ -12,10 +12,10 @@ readme = "README.md"
 documentation = "https://docs.rs/llamaedge/"
 
 [dependencies]
-thiserror = "2"
-url = "2.5.4"
 endpoints = { version = "0.23.0", features = ["full"] }
-reqwest = { version = "0.12.0", features = ["json", "stream", "multipart"] }
 futures = { version = "0.3.6", default-features = false, features = ["async-await", "std"] }
+reqwest = { version = "0.12.0", features = ["json", "stream", "multipart"] }
 serde_json = "1.0.134"
+thiserror = "2"
 tokio = { version = "1.39.0", features = ["full"] }
+url = "2.5.4"
