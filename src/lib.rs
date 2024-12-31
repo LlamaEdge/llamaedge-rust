@@ -56,12 +56,18 @@
 pub mod error;
 pub mod params;
 
-use endpoints::chat::{
-    ChatCompletionObject, ChatCompletionRequest, ChatCompletionRequestMessage, StreamOptions,
+use endpoints::{
+    audio::transcription::{TranscriptionObject, TranscriptionRequest},
+    chat::{
+        ChatCompletionObject, ChatCompletionRequest, ChatCompletionRequestMessage, StreamOptions,
+    },
+    files::FileObject,
 };
 use error::LlamaEdgeError;
 use futures::{stream::TryStream, StreamExt};
-use params::ChatParams;
+use params::{ChatParams, TranscriptionParams};
+use reqwest::multipart;
+use std::path::Path;
 use url::Url;
 
 /// Client for the LlamaEdge API.
@@ -192,8 +198,68 @@ impl Client {
     }
 
     /// Transcribe an audio file.
-    pub fn transcribe(&self, _audio: impl AsRef<str>) -> Result<String, LlamaEdgeError> {
-        unimplemented!("Not implemented");
+    pub async fn transcribe(
+        &self,
+        audio_file: impl AsRef<Path>,
+        params: &TranscriptionParams,
+    ) -> Result<TranscriptionObject, LlamaEdgeError> {
+        let client = reqwest::Client::new();
+
+        let file = tokio::fs::read(audio_file)
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(format!("Failed to read audio file: {}", e)))?;
+        let file_part = multipart::Part::bytes(file)
+            .file_name("test.wav")
+            .mime_str("audio/wav")
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        let form = multipart::Form::new().part("file", file_part);
+
+        let url = self.server_base_url.join("/v1/files")?;
+        let response = client
+            .post(url)
+            .multipart(form)
+            .send()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        let file_object = response
+            .json::<FileObject>()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        // create transcription request
+        let transcription_request = TranscriptionRequest {
+            file: file_object,
+            model: params.model.clone(),
+            language: Some(params.language.clone()),
+            prompt: params.prompt.clone(),
+            response_format: Some(params.response_format.clone()),
+            temperature: Some(params.temperature),
+            timestamp_granularities: params.timestamp_granularities.clone(),
+            detect_language: Some(params.detect_language),
+            offset_time: Some(params.offset_time),
+            duration: Some(params.duration),
+            max_context: Some(params.max_context),
+            max_len: Some(params.max_len),
+            split_on_word: Some(params.split_on_word),
+            use_new_context: params.use_new_context,
+        };
+
+        let url = self.server_base_url.join("/v1/audio/transcriptions")?;
+        let response = client
+            .post(url)
+            .json(&transcription_request)
+            .send()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        let transcription_object = response
+            .json::<TranscriptionObject>()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        Ok(transcription_object)
     }
 }
 
