@@ -14,7 +14,7 @@ documentation = "https://docs.rs/llamaedge/"
 [dependencies]
 thiserror = "2"
 url = "2.5.4"
-endpoints = "0.23.0"
+endpoints = { version = "0.23.0", features = ["full"] }
 reqwest = { version = "0.12.0", features = ["json", "stream"] }
 futures = { version = "0.3.6", default-features = false, features = ["async-await", "std"] }
 serde_json = "1.0.134"
