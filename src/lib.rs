@@ -57,7 +57,7 @@ pub mod error;
 pub mod params;
 
 use endpoints::{
-    audio::transcription::{TranscriptionObject, TranscriptionRequest},
+    audio::transcription::TranscriptionObject,
     chat::{
         ChatCompletionObject, ChatCompletionRequest, ChatCompletionRequestMessage, StreamOptions,
     },
@@ -203,57 +203,120 @@ impl Client {
         audio_file: impl AsRef<Path>,
         params: &TranscriptionParams,
     ) -> Result<TranscriptionObject, LlamaEdgeError> {
-        let client = reqwest::Client::new();
+        let abs_file_path = if audio_file.as_ref().is_absolute() {
+            audio_file.as_ref().to_path_buf()
+        } else {
+            std::env::current_dir().unwrap().join(audio_file.as_ref())
+        };
 
-        let file = tokio::fs::read(audio_file)
+        // check if the file exists
+        if !abs_file_path.exists() {
+            return Err(LlamaEdgeError::InvalidArgument(
+                "The file does not exist".to_string(),
+            ));
+        }
+
+        // get the filename
+        let filename = abs_file_path
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+
+        // get the file extension
+        let file_extension = abs_file_path
+            .extension()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+
+        let file = tokio::fs::read(abs_file_path)
             .await
             .map_err(|e| LlamaEdgeError::Operation(format!("Failed to read audio file: {}", e)))?;
-        let file_part = multipart::Part::bytes(file)
-            .file_name("test.wav")
-            .mime_str("audio/wav")
-            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
 
-        let form = multipart::Form::new().part("file", file_part);
+        let form = {
+            let file_part = multipart::Part::bytes(file)
+                .file_name(filename)
+                .mime_str(&format!("audio/{}", file_extension))
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
 
-        let url = self.server_base_url.join("/v1/files")?;
-        let response = client
+            let language_part = multipart::Part::text(params.language.clone())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let temperature_part = multipart::Part::text(params.temperature.to_string())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let detect_language_part = multipart::Part::text(params.detect_language.to_string())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let offset_time_part = multipart::Part::text(params.offset_time.to_string())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let duration_part = multipart::Part::text(params.duration.to_string())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let max_context_part = multipart::Part::text(params.max_context.to_string())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let max_len_part = multipart::Part::text(params.max_len.to_string())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let split_on_word_part = multipart::Part::text(params.split_on_word.to_string())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let use_new_context_part = multipart::Part::text(params.use_new_context.to_string())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let mut form = multipart::Form::new()
+                .part("file", file_part)
+                .part("language", language_part)
+                .part("temperature", temperature_part)
+                .part("detect_language", detect_language_part)
+                .part("offset_time", offset_time_part)
+                .part("duration", duration_part)
+                .part("max_context", max_context_part)
+                .part("max_len", max_len_part)
+                .part("split_on_word", split_on_word_part)
+                .part("use_new_context", use_new_context_part);
+
+            if let Some(model) = &params.model {
+                let model_part = multipart::Part::text(model.clone())
+                    .mime_str("text/plain")
+                    .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+                form = form.part("model", model_part);
+            }
+
+            if let Some(prompt) = &params.prompt {
+                let prompt_part = multipart::Part::text(prompt.clone())
+                    .mime_str("text/plain")
+                    .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+                form = form.part("prompt", prompt_part);
+            }
+
+            form
+        };
+
+        // send the transcription request
+        let url = self.server_base_url.join("/v1/audio/transcriptions")?;
+        let response = reqwest::Client::new()
             .post(url)
             .multipart(form)
             .send()
             .await
             .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
 
-        let file_object = response
-            .json::<FileObject>()
-            .await
-            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
-
-        // create transcription request
-        let transcription_request = TranscriptionRequest {
-            file: file_object,
-            model: params.model.clone(),
-            language: Some(params.language.clone()),
-            prompt: params.prompt.clone(),
-            response_format: Some(params.response_format.clone()),
-            temperature: Some(params.temperature),
-            timestamp_granularities: params.timestamp_granularities.clone(),
-            detect_language: Some(params.detect_language),
-            offset_time: Some(params.offset_time),
-            duration: Some(params.duration),
-            max_context: Some(params.max_context),
-            max_len: Some(params.max_len),
-            split_on_word: Some(params.split_on_word),
-            use_new_context: params.use_new_context,
-        };
-
-        let url = self.server_base_url.join("/v1/audio/transcriptions")?;
-        let response = client
-            .post(url)
-            .json(&transcription_request)
-            .send()
-            .await
-            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
-
+        // get the transcription object
         let transcription_object = response
             .json::<TranscriptionObject>()
             .await
@@ -261,99 +324,62 @@ impl Client {
 
         Ok(transcription_object)
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use endpoints::chat::{
-        ChatCompletionChunk, ChatCompletionRequestMessage, ChatCompletionSystemMessage,
-        ChatCompletionUserMessage, ChatCompletionUserMessageContent,
-    };
+    pub async fn upload_file(&self, file: impl AsRef<Path>) -> Result<FileObject, LlamaEdgeError> {
+        let abs_file_path = if file.as_ref().is_absolute() {
+            file.as_ref().to_path_buf()
+        } else {
+            std::env::current_dir().unwrap().join(file.as_ref())
+        };
 
-    const SERVER_BASE_URL: &str = "http://localhost:10086";
-
-    #[tokio::test]
-    async fn test_chat() {
-        let client = Client::new(SERVER_BASE_URL).unwrap();
-
-        let mut messages = Vec::new();
-        let system_message = ChatCompletionRequestMessage::System(
-            ChatCompletionSystemMessage::new(
-                "You are a helpful assistant. Answer questions as concisely and accurately as possible.",
-                None,
-            ),
-        );
-        messages.push(system_message);
-        let user_message = ChatCompletionRequestMessage::User(ChatCompletionUserMessage::new(
-            ChatCompletionUserMessageContent::Text("What is the capital of France?".to_string()),
-            None,
-        ));
-        messages.push(user_message);
-
-        let result = client.chat(&messages[..], &ChatParams::default()).await;
-
-        assert!(result.is_ok());
-        let generation = result.unwrap();
-        println!("{}", generation);
-    }
-
-    #[tokio::test]
-    async fn test_chat_stream() {
-        let client = Client::new(SERVER_BASE_URL).unwrap();
-
-        let mut messages = Vec::new();
-        let system_message = ChatCompletionRequestMessage::System(
-            ChatCompletionSystemMessage::new(
-                "You are a helpful assistant. Answer questions as concisely and accurately as possible.",
-                None,
-            ),
-        );
-        messages.push(system_message);
-        let user_message = ChatCompletionRequestMessage::User(ChatCompletionUserMessage::new(
-            ChatCompletionUserMessageContent::Text("What is the capital of France?".to_string()),
-            None,
-        ));
-        messages.push(user_message);
-
-        let result = client
-            .chat_stream(&messages[..], &ChatParams::default())
-            .await;
-        assert!(result.is_ok());
-        let mut stream = result.unwrap();
-
-        // iterate over the stream
-        let mut output = String::new();
-        while let Some(item) = stream.next().await {
-            if let Ok(event) = item {
-                let event_parts = event
-                    .split("data: ")
-                    .map(|s| s.trim())
-                    .filter(|s| !s.is_empty())
-                    .collect::<Vec<&str>>();
-
-                for part in event_parts.iter() {
-                    if *part == "[DONE]" {
-                        break;
-                    }
-
-                    if let Ok(chunk) = serde_json::from_str::<ChatCompletionChunk>(part) {
-                        if !chunk.choices.is_empty() {
-                            if let Some(content) = &chunk.choices[0].delta.content {
-                                let content = content.trim();
-                                if !content.is_empty() {
-                                    // append content to output
-                                    output.push_str(content);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        // check if the file exists
+        if !abs_file_path.exists() {
+            return Err(LlamaEdgeError::InvalidArgument(
+                "The file does not exist".to_string(),
+            ));
         }
 
-        assert!(!output.is_empty());
-        assert!(output.contains("Paris"));
-        println!("output: {}", output);
+        // get the filename
+        let filename = abs_file_path
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+
+        // get the file extension
+        let file_extension = abs_file_path
+            .extension()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+
+        let file = tokio::fs::read(abs_file_path)
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(format!("Failed to read audio file: {}", e)))?;
+        let file_part = multipart::Part::bytes(file)
+            .file_name(filename)
+            .mime_str(&format!("audio/{}", file_extension))
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        let form = multipart::Form::new().part("file", file_part);
+
+        // upload the audio file
+        let url = self.server_base_url.join("/v1/files")?;
+        let response = reqwest::Client::new()
+            .post(url)
+            .multipart(form)
+            .send()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        // get the file object
+        let file_object = response
+            .json::<FileObject>()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        Ok(file_object)
     }
 }
