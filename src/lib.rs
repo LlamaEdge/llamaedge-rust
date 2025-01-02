@@ -76,6 +76,14 @@ pub struct Client {
 }
 impl Client {
     /// Create a new client.
+    ///
+    /// # Arguments
+    ///
+    /// * `server_base_url` - The base URL of the LlamaEdge API server.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the client or an error.
     pub fn new(server_base_url: impl AsRef<str>) -> Result<Self, LlamaEdgeError> {
         let url_str = server_base_url.as_ref().trim_end_matches('/');
         match Url::parse(url_str) {
@@ -89,11 +97,25 @@ impl Client {
     }
 
     /// Get the server base URL.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the server base URL.
     pub fn server_base_url(&self) -> &Url {
         &self.server_base_url
     }
 
     /// Send a chat completion request.
+    ///
+    /// # Arguments
+    ///
+    /// * `chat_history` - The chat history including the latest user message.
+    ///
+    /// * `params` - The parameters for the chat completion.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the chat completion or an error.
     pub async fn chat(
         &self,
         chat_history: &[ChatCompletionRequestMessage],
@@ -144,6 +166,16 @@ impl Client {
     }
 
     /// Send a chat completion request with streaming.
+    ///
+    /// # Arguments
+    ///
+    /// * `chat_history` - The chat history including the latest user message.
+    ///
+    /// * `params` - The parameters for the chat completion.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the chat completion stream or an error.
     pub async fn chat_stream(
         &self,
         chat_history: &[ChatCompletionRequestMessage],
@@ -502,6 +534,14 @@ impl Client {
     }
 
     /// Upload a file to the server.
+    ///
+    /// # Arguments
+    ///
+    /// * `file` - The file to upload.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the file object or an error.
     pub async fn upload_file(&self, file: impl AsRef<Path>) -> Result<FileObject, LlamaEdgeError> {
         let abs_file_path = if file.as_ref().is_absolute() {
             file.as_ref().to_path_buf()
