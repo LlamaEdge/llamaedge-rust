@@ -72,6 +72,7 @@ impl Default for ChatParams {
     }
 }
 
+/// Parameters for the RAG chat completion API.
 #[derive(Debug, Clone)]
 pub struct RagChatParams {
     /// The model to use for generating completions.
@@ -156,6 +157,7 @@ impl Default for RagChatParams {
     }
 }
 
+/// Parameters for the transcription API.
 #[derive(Debug, Clone)]
 pub struct TranscriptionParams {
     /// ID of the model to use.
@@ -196,6 +198,54 @@ impl Default for TranscriptionParams {
             response_format: "json".to_string(),
             temperature: 0.0,
             timestamp_granularities: Some(vec![TimestampGranularity::Segment]),
+            detect_language: false,
+            offset_time: 0,
+            duration: 0,
+            max_context: -1,
+            max_len: 0,
+            split_on_word: false,
+            use_new_context: false,
+        }
+    }
+}
+
+/// Parameters for the translation API.
+#[derive(Debug, Clone)]
+pub struct TranslationParams {
+    /// ID of the model to use.
+    pub model: Option<String>,
+    /// An optional text to guide the model's style or continue a previous audio segment. The prompt should be in English.
+    pub prompt: Option<String>,
+    /// The format of the transcript output, in one of these options: `json`, `text`, `srt`, `verbose_json`, or `vtt`. Defaults to `json`.
+    pub response_format: String,
+    /// The sampling temperature, between 0 and 1. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic. If set to 0, the model will use [log probability](https://en.wikipedia.org/wiki/Log_probability) to automatically increase the temperature until certain thresholds are hit. Defaults to 0.0.
+    pub temperature: f64,
+
+    /// The language of the input audio. Supplying the input language in [ISO-639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) format will improve accuracy and latency. Defaults to `en`. If `detect_language` is true, this parameter will be set to `auto`.
+    pub language: String,
+    /// automatically detect the spoken language in the provided audio input. Defaults to false.
+    pub detect_language: bool,
+    /// Time offset in milliseconds. Defaults to 0.
+    pub offset_time: u64,
+    /// Length of audio (in seconds) to be processed starting from the point defined by the `offset_time` field (or from the beginning by default). Defaults to 0.
+    pub duration: u64,
+    /// Maximum amount of text context (in tokens) that the model uses when processing long audio inputs incrementally. Defaults to -1.
+    pub max_context: i32,
+    /// Maximum number of tokens that the model can generate in a single transcription segment (or chunk). Defaults to 0.
+    pub max_len: u64,
+    /// Split audio chunks on word rather than on token. Defaults to false.
+    pub split_on_word: bool,
+    /// Use the new computation context. Defaults to false.
+    pub use_new_context: bool,
+}
+impl Default for TranslationParams {
+    fn default() -> Self {
+        Self {
+            model: None,
+            prompt: None,
+            response_format: "json".to_string(),
+            temperature: 0.0,
+            language: "en".to_string(),
             detect_language: false,
             offset_time: 0,
             duration: 0,
