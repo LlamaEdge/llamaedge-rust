@@ -3,7 +3,7 @@ use llamaedge::{
     Client,
 };
 
-const SERVER_BASE_URL: &str = "http://localhost:12345";
+const SERVER_BASE_URL: &str = "http://localhost:8080";
 
 #[tokio::test]
 async fn test_audio_transcribe() {
