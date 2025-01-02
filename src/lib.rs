@@ -198,10 +198,23 @@ impl Client {
     }
 
     /// Transcribe an audio file.
+    ///
+    /// # Arguments
+    ///
+    /// * `audio_file` - The audio file to transcribe.
+    ///
+    /// * `spoken_language` - The language of the audio file. The language should be in [ISO-639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) format. For example, "en" for English, "zh" for Chinese, "ja" for Japanese, etc.
+    ///
+    /// * `params` - The parameters for the transcription.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the transcription object or an error.
     pub async fn transcribe(
         &self,
         audio_file: impl AsRef<Path>,
-        params: &TranscriptionParams,
+        spoken_language: impl AsRef<str>,
+        params: TranscriptionParams,
     ) -> Result<TranscriptionObject, LlamaEdgeError> {
         let abs_file_path = if audio_file.as_ref().is_absolute() {
             audio_file.as_ref().to_path_buf()
@@ -243,11 +256,16 @@ impl Client {
                 .mime_str(&format!("audio/{}", file_extension))
                 .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
 
-            let language_part = multipart::Part::text(params.language.clone())
+            let language = if spoken_language.as_ref().is_empty() {
+                "en".to_string()
+            } else {
+                spoken_language.as_ref().to_string()
+            };
+            let language_part = multipart::Part::text(language)
                 .mime_str("text/plain")
                 .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
 
-            let response_format_part = multipart::Part::text(params.response_format.clone())
+            let response_format_part = multipart::Part::text(params.response_format)
                 .mime_str("text/plain")
                 .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
 
@@ -332,10 +350,23 @@ impl Client {
     }
 
     /// Translate an audio file.
+    ///
+    /// # Arguments
+    ///
+    /// * `audio_file` - The audio file to translate.
+    ///
+    /// * `spoken_language` - The language of the audio file. The language should be in [ISO-639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) format. For example, "en" for English, "zh" for Chinese, "ja" for Japanese, etc.
+    ///
+    /// * `params` - The parameters for the translation.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the translation object or an error.
     pub async fn translate(
         &self,
         audio_file: impl AsRef<Path>,
-        params: &TranslationParams,
+        spoken_language: impl AsRef<str>,
+        params: TranslationParams,
     ) -> Result<TranslationObject, LlamaEdgeError> {
         let abs_file_path = if audio_file.as_ref().is_absolute() {
             audio_file.as_ref().to_path_buf()
@@ -377,11 +408,16 @@ impl Client {
                 .mime_str(&format!("audio/{}", file_extension))
                 .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
 
-            let response_format_part = multipart::Part::text(params.response_format.clone())
+            let response_format_part = multipart::Part::text(params.response_format)
                 .mime_str("text/plain")
                 .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
 
-            let language_part = multipart::Part::text(params.language.clone())
+            let language = if spoken_language.as_ref().is_empty() {
+                "en".to_string()
+            } else {
+                spoken_language.as_ref().to_string()
+            };
+            let language_part = multipart::Part::text(language)
                 .mime_str("text/plain")
                 .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
 

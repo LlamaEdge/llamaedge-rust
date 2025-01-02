@@ -3,15 +3,19 @@ use llamaedge::{
     Client,
 };
 
-const SERVER_BASE_URL: &str = "http://localhost:8080";
+const SERVER_BASE_URL: &str = "http://localhost:12345";
 
 #[tokio::test]
 async fn test_audio_transcribe() {
     let client = Client::new(SERVER_BASE_URL).unwrap();
 
-    let mut params = TranscriptionParams::default();
-    params.language = "en".to_string();
-    let result = client.transcribe("tests/assets/test.wav", &params).await;
+    let result = client
+        .transcribe(
+            "tests/assets/test.wav",
+            "en",
+            TranscriptionParams::default(),
+        )
+        .await;
     assert!(result.is_ok());
 
     let transcription = result.unwrap();
@@ -23,9 +27,13 @@ async fn test_audio_transcribe() {
 async fn test_audio_translate() {
     let client = Client::new(SERVER_BASE_URL).unwrap();
 
-    let mut params = TranslationParams::default();
-    params.language = "zh".to_string();
-    let result = client.translate("tests/assets/test_zh.wav", &params).await;
+    let result = client
+        .translate(
+            "tests/assets/test_zh.wav",
+            "zh",
+            TranslationParams::default(),
+        )
+        .await;
     assert!(result.is_ok());
 
     let translation = result.unwrap();

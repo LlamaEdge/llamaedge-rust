@@ -162,8 +162,6 @@ impl Default for RagChatParams {
 pub struct TranscriptionParams {
     /// ID of the model to use.
     pub model: Option<String>,
-    /// The language of the input audio. Supplying the input language in [ISO-639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) format will improve accuracy and latency. Defaults to `en`. If `detect_language` is true, this parameter will be set to `auto`.
-    pub language: String,
     /// An optional text to guide the model's style or continue a previous audio segment. The prompt should match the audio language.
     pub prompt: Option<String>,
     /// The format of the transcript output, in one of these options: `json`, `text`, `srt`, `verbose_json`, or `vtt`.
@@ -193,7 +191,6 @@ impl Default for TranscriptionParams {
     fn default() -> Self {
         Self {
             model: None,
-            language: "en".to_string(),
             prompt: None,
             response_format: "json".to_string(),
             temperature: 0.0,
@@ -220,9 +217,6 @@ pub struct TranslationParams {
     pub response_format: String,
     /// The sampling temperature, between 0 and 1. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic. If set to 0, the model will use [log probability](https://en.wikipedia.org/wiki/Log_probability) to automatically increase the temperature until certain thresholds are hit. Defaults to 0.0.
     pub temperature: f64,
-
-    /// The language of the input audio. Supplying the input language in [ISO-639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) format will improve accuracy and latency. Defaults to `en`. If `detect_language` is true, this parameter will be set to `auto`.
-    pub language: String,
     /// automatically detect the spoken language in the provided audio input. Defaults to false.
     pub detect_language: bool,
     /// Time offset in milliseconds. Defaults to 0.
@@ -245,7 +239,6 @@ impl Default for TranslationParams {
             prompt: None,
             response_format: "json".to_string(),
             temperature: 0.0,
-            language: "en".to_string(),
             detect_language: false,
             offset_time: 0,
             duration: 0,
