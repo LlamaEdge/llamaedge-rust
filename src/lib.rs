@@ -62,6 +62,7 @@ use endpoints::{
         ChatCompletionObject, ChatCompletionRequest, ChatCompletionRequestMessage, StreamOptions,
     },
     files::FileObject,
+    models::{ListModelsResponse, Model},
 };
 use error::LlamaEdgeError;
 use futures::{stream::TryStream, StreamExt};
@@ -598,5 +599,25 @@ impl Client {
             .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
 
         Ok(file_object)
+    }
+
+    /// List all available models.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the list of models or an error.
+    pub async fn models(&self) -> Result<Vec<Model>, LlamaEdgeError> {
+        let url = self.server_base_url.join("/v1/models")?;
+        let response = reqwest::Client::new()
+            .get(url)
+            .send()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+        let list_models_response = response
+            .json::<ListModelsResponse>()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        Ok(list_models_response.data)
     }
 }
