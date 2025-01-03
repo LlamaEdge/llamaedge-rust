@@ -249,3 +249,33 @@ impl Default for TranslationParams {
         }
     }
 }
+
+/// Parameters for the embeddings API.
+#[derive(Debug, Clone)]
+pub struct EmbeddingsParams {
+    /// ID of the model to use.
+    pub model: Option<String>,
+    /// The format to return the embeddings in. Can be either float or base64.
+    /// Defaults to float.
+    pub encoding_format: String,
+    /// A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.
+    pub user: Option<String>,
+    /// The URL of the VectorDB server.
+    pub vdb_server_url: Option<String>,
+    /// The name of the collection in VectorDB.
+    pub vdb_collection_name: Option<String>,
+    /// The API key for the VectorDB server.
+    pub vdb_api_key: Option<String>,
+}
+impl Default for EmbeddingsParams {
+    fn default() -> Self {
+        Self {
+            model: None,
+            encoding_format: "float".to_string(),
+            user: None,
+            vdb_server_url: None,
+            vdb_collection_name: None,
+            vdb_api_key: None,
+        }
+    }
+}

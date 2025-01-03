@@ -61,12 +61,13 @@ use endpoints::{
     chat::{
         ChatCompletionObject, ChatCompletionRequest, ChatCompletionRequestMessage, StreamOptions,
     },
+    embeddings::{EmbeddingRequest, EmbeddingsResponse, InputText},
     files::FileObject,
     models::{ListModelsResponse, Model},
 };
 use error::LlamaEdgeError;
 use futures::{stream::TryStream, StreamExt};
-use params::{ChatParams, TranscriptionParams, TranslationParams};
+use params::{ChatParams, EmbeddingsParams, TranscriptionParams, TranslationParams};
 use reqwest::multipart;
 use std::path::Path;
 use url::Url;
@@ -619,5 +620,37 @@ impl Client {
             .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
 
         Ok(list_models_response.data)
+    }
+
+    pub async fn embeddings(
+        &self,
+        input: InputText,
+        params: EmbeddingsParams,
+    ) -> Result<EmbeddingsResponse, LlamaEdgeError> {
+        let url = self.server_base_url.join("/v1/embeddings")?;
+
+        let request = EmbeddingRequest {
+            input,
+            model: params.model,
+            encoding_format: Some(params.encoding_format),
+            user: params.user,
+            vdb_server_url: params.vdb_server_url,
+            vdb_collection_name: params.vdb_collection_name,
+            vdb_api_key: params.vdb_api_key,
+        };
+
+        let response = reqwest::Client::new()
+            .post(url)
+            .json(&request)
+            .send()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        let embeddings_response = response
+            .json::<EmbeddingsResponse>()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        Ok(embeddings_response)
     }
 }
