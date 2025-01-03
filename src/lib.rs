@@ -622,6 +622,17 @@ impl Client {
         Ok(list_models_response.data)
     }
 
+    /// Compute embeddings for a given input.
+    ///
+    /// # Arguments
+    ///
+    /// * `input` - The input to compute embeddings for.
+    ///
+    /// * `params` - The parameters for the embeddings.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the embeddings or an error.
     pub async fn embeddings(
         &self,
         input: InputText,

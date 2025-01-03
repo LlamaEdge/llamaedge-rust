@@ -258,7 +258,7 @@ pub struct EmbeddingsParams {
     /// The format to return the embeddings in. Can be either float or base64.
     /// Defaults to float.
     pub encoding_format: String,
-    /// A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.
+    /// A unique identifier representing your end-user.
     pub user: Option<String>,
     /// The URL of the VectorDB server.
     pub vdb_server_url: Option<String>,
