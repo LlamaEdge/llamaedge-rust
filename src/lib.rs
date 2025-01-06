@@ -69,7 +69,8 @@ use endpoints::{
 use error::LlamaEdgeError;
 use futures::{stream::TryStream, StreamExt};
 use params::{
-    ChatParams, EmbeddingsParams, ImageCreateParams, TranscriptionParams, TranslationParams,
+    ChatParams, EmbeddingsParams, ImageCreateParams, ImageEditParams, TranscriptionParams,
+    TranslationParams,
 };
 use reqwest::multipart;
 use std::path::Path;
@@ -283,9 +284,9 @@ impl Client {
             .unwrap()
             .to_string();
 
-        let file = tokio::fs::read(abs_file_path)
-            .await
-            .map_err(|e| LlamaEdgeError::Operation(format!("Failed to read audio file: {}", e)))?;
+        let file = tokio::fs::read(abs_file_path).await.map_err(|e| {
+            LlamaEdgeError::Operation(format!("Failed to read the audio file: {}", e))
+        })?;
 
         let form = {
             let file_part = multipart::Part::bytes(file)
@@ -715,6 +716,270 @@ impl Client {
         let response = reqwest::Client::new()
             .post(url)
             .json(&request)
+            .send()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        let list_images_response = response
+            .json::<ListImagesResponse>()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        Ok(list_images_response.data)
+    }
+
+    /// Edit the given image with the given prompt.
+    ///
+    /// # Arguments
+    ///
+    /// * `image` - The image to edit.
+    ///
+    /// * `prompt` - The prompt for the image edit.
+    ///
+    /// * `params` - The parameters for the image edit.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the list of images or an error.
+    pub async fn edit_image(
+        &self,
+        image: impl AsRef<Path>,
+        prompt: impl AsRef<str>,
+        params: ImageEditParams,
+    ) -> Result<Vec<ImageObject>, LlamaEdgeError> {
+        let abs_file_path = if image.as_ref().is_absolute() {
+            image.as_ref().to_path_buf()
+        } else {
+            std::env::current_dir().unwrap().join(image.as_ref())
+        };
+
+        // check if the file exists
+        if !abs_file_path.exists() {
+            let error_message =
+                format!("The image file does not exist: {}", abs_file_path.display());
+
+            return Err(LlamaEdgeError::InvalidArgument(error_message));
+        }
+
+        // get the filename
+        let filename = abs_file_path
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+
+        // get the file extension
+        let file_extension = abs_file_path
+            .extension()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+
+        let file = tokio::fs::read(abs_file_path).await.map_err(|e| {
+            LlamaEdgeError::Operation(format!("Failed to read the image file: {}", e))
+        })?;
+
+        let form = {
+            let file_part = multipart::Part::bytes(file)
+                .file_name(filename)
+                .mime_str(&format!("image/{}", file_extension))
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let prompt_part = multipart::Part::text(prompt.as_ref().to_string())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let model_part = multipart::Part::text(params.model.clone())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let n_part = multipart::Part::text(params.n.to_string())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let response_format_part = multipart::Part::text(params.response_format.to_string())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let cfg_scale_part = multipart::Part::text(params.cfg_scale.to_string())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let sample_method_part = multipart::Part::text(params.sample_method.to_string())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let steps_part = multipart::Part::text(params.steps.to_string())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let height_part = multipart::Part::text(params.height.to_string())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let width_part = multipart::Part::text(params.width.to_string())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let control_strength_part = multipart::Part::text(params.control_strength.to_string())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let seed_part = multipart::Part::text(params.seed.to_string())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let strength_part = multipart::Part::text(params.strength.to_string())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let scheduler_part = multipart::Part::text(params.scheduler.to_string())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let apply_canny_preprocessor_part =
+                multipart::Part::text(params.apply_canny_preprocessor.to_string())
+                    .mime_str("text/plain")
+                    .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let style_ratio_part = multipart::Part::text(params.style_ratio.to_string())
+                .mime_str("text/plain")
+                .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+            let mut form = multipart::Form::new()
+                .part("file", file_part)
+                .part("prompt", prompt_part)
+                .part("model", model_part)
+                .part("n", n_part)
+                .part("response_format", response_format_part)
+                .part("cfg_scale", cfg_scale_part)
+                .part("sample_method", sample_method_part)
+                .part("steps", steps_part)
+                .part("height", height_part)
+                .part("width", width_part)
+                .part("control_strength", control_strength_part)
+                .part("seed", seed_part)
+                .part("strength", strength_part)
+                .part("scheduler", scheduler_part)
+                .part("apply_canny_preprocessor", apply_canny_preprocessor_part)
+                .part("style_ratio", style_ratio_part);
+
+            if let Some(user) = params.user {
+                let user_part = multipart::Part::text(user)
+                    .mime_str("text/plain")
+                    .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+                form = form.part("user", user_part);
+            }
+
+            if let Some(negative_prompt) = params.negative_prompt {
+                let negative_prompt_part = multipart::Part::text(negative_prompt)
+                    .mime_str("text/plain")
+                    .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+                form = form.part("negative_prompt", negative_prompt_part);
+            }
+
+            if let Some(mask) = params.mask {
+                let abs_mask_file_path = if mask.is_absolute() {
+                    mask.to_path_buf()
+                } else {
+                    std::env::current_dir().unwrap().join(mask)
+                };
+
+                // check if the file exists
+                if !abs_mask_file_path.exists() {
+                    let error_message = format!(
+                        "The mask image file does not exist: {}",
+                        abs_mask_file_path.display()
+                    );
+
+                    return Err(LlamaEdgeError::InvalidArgument(error_message));
+                }
+
+                // get the filename
+                let mask_filename = abs_mask_file_path
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string();
+
+                // get the file extension
+                let mask_file_extension = abs_mask_file_path
+                    .extension()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string();
+
+                let mask_file = tokio::fs::read(abs_mask_file_path).await.map_err(|e| {
+                    LlamaEdgeError::Operation(format!("Failed to read the image file: {}", e))
+                })?;
+
+                let mask_file_part = multipart::Part::bytes(mask_file)
+                    .file_name(mask_filename)
+                    .mime_str(&format!("image/{}", mask_file_extension))
+                    .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+                form = form.part("mask", mask_file_part);
+            }
+
+            if let Some(control_image) = params.control_image {
+                let abs_control_image_file_path = if control_image.is_absolute() {
+                    control_image.to_path_buf()
+                } else {
+                    std::env::current_dir().unwrap().join(control_image)
+                };
+
+                // check if the file exists
+                if !abs_control_image_file_path.exists() {
+                    let error_message = format!(
+                        "The control image file does not exist: {}",
+                        abs_control_image_file_path.display()
+                    );
+
+                    return Err(LlamaEdgeError::InvalidArgument(error_message));
+                }
+
+                // get the filename
+                let control_image_filename = abs_control_image_file_path
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string();
+
+                // get the file extension
+                let control_image_file_extension = abs_control_image_file_path
+                    .extension()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string();
+
+                let control_image_file = tokio::fs::read(abs_control_image_file_path)
+                    .await
+                    .map_err(|e| {
+                        LlamaEdgeError::Operation(format!("Failed to read the image file: {}", e))
+                    })?;
+
+                let control_image_file_part = multipart::Part::bytes(control_image_file)
+                    .file_name(control_image_filename)
+                    .mime_str(&format!("image/{}", control_image_file_extension))
+                    .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+                form = form.part("control_image", control_image_file_part);
+            }
+
+            form
+        };
+
+        let url = self.server_base_url.join("/v1/images/edits")?;
+
+        let response = reqwest::Client::new()
+            .post(url)
+            .multipart(form)
             .send()
             .await
             .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
