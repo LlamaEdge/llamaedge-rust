@@ -53,3 +53,10 @@ async fn main() {
 ```
 
 **Note:** To run the example, LlamaEdge API server should be deployed and running on your local machine. Refer to [Quick Start](https://github.com/LlamaEdge/LlamaEdge?tab=readme-ov-file#quick-start) for more details on how to deploy and run the server.
+
+## Examples
+
+- [Chat](examples/chat.rs) shows how to run a chat completion task.
+- [Transcribe Audio](examples/transcribe_audio.rs) shows how to run a transcription task.
+- [Translate Audio](examples/translate_audio.rs) shows how to run a translation task.
+- [Create Image](examples/create_image.rs) shows how to run a image creation task.
