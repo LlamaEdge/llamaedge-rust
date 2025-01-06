@@ -63,11 +63,14 @@ use endpoints::{
     },
     embeddings::{EmbeddingRequest, EmbeddingsResponse, InputText},
     files::FileObject,
+    images::{ImageCreateRequestBuilder, ImageObject, ListImagesResponse},
     models::{ListModelsResponse, Model},
 };
 use error::LlamaEdgeError;
 use futures::{stream::TryStream, StreamExt};
-use params::{ChatParams, EmbeddingsParams, TranscriptionParams, TranslationParams};
+use params::{
+    ChatParams, EmbeddingsParams, ImageCreateParams, TranscriptionParams, TranslationParams,
+};
 use reqwest::multipart;
 use std::path::Path;
 use url::Url;
@@ -663,5 +666,64 @@ impl Client {
             .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
 
         Ok(embeddings_response)
+    }
+
+    /// Create an image with the given prompt.
+    ///
+    /// # Arguments
+    ///
+    /// * `prompt` - The prompt for the image.
+    ///
+    /// * `params` - The parameters for the image creation.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the list of images or an error.
+    pub async fn create_image(
+        &self,
+        prompt: impl AsRef<str>,
+        params: ImageCreateParams,
+    ) -> Result<Vec<ImageObject>, LlamaEdgeError> {
+        let url = self.server_base_url.join("/v1/images/generations")?;
+
+        // build the request
+        let mut builder = ImageCreateRequestBuilder::new(params.model, prompt.as_ref())
+            .with_number_of_images(params.n)
+            .with_response_format(params.response_format)
+            .with_cfg_scale(params.cfg_scale)
+            .with_sample_method(params.sample_method)
+            .with_steps(params.steps)
+            .with_image_size(params.height, params.width)
+            .with_control_strength(params.control_strength)
+            .with_seed(params.seed)
+            .with_strength(params.strength)
+            .with_scheduler(params.scheduler)
+            .apply_canny_preprocessor(params.apply_canny_preprocessor)
+            .with_style_ratio(params.style_ratio);
+        if let Some(negative_prompt) = params.negative_prompt {
+            builder = builder.with_negative_prompt(negative_prompt);
+        }
+        if let Some(user) = params.user {
+            builder = builder.with_user(user);
+        }
+        if let Some(control_image) = params.control_image {
+            builder = builder.with_control_image(control_image);
+        }
+        let request = builder.build();
+
+        // send the request
+        let response = reqwest::Client::new()
+            .post(url)
+            .json(&request)
+            .send()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        let list_images_response = response
+            .json::<ListImagesResponse>()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        Ok(list_images_response.data)
     }
 }

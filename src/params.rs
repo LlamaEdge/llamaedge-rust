@@ -3,6 +3,8 @@
 use endpoints::{
     audio::transcription::TimestampGranularity,
     chat::{ChatResponseFormat, Tool, ToolChoice},
+    files::FileObject,
+    images::{ResponseFormat as ImageResponseFormat, SamplingMethod, Scheduler},
 };
 
 /// Parameters for the chat completion API.
@@ -276,6 +278,68 @@ impl Default for EmbeddingsParams {
             vdb_server_url: None,
             vdb_collection_name: None,
             vdb_api_key: None,
+        }
+    }
+}
+
+/// Parameters for the image generation API.
+#[derive(Debug, Clone)]
+pub struct ImageCreateParams {
+    /// Negative prompt for the image generation.
+    pub negative_prompt: Option<String>,
+    /// Name of the model to use for image generation.
+    pub model: String,
+    /// Number of images to generate. Defaults to `1`.
+    pub n: u64,
+    /// The format in which the generated images are returned. Must be one of `url` or `b64_json`. Defaults to `Url`.
+    pub response_format: ImageResponseFormat,
+    /// A unique identifier representing your end-user, which can help monitor and detect abuse.
+    pub user: Option<String>,
+    /// Unconditional guidance scale. Defaults to `7.0`.
+    pub cfg_scale: f32,
+    /// Sampling method. Defaults to "euler_a".
+    pub sample_method: SamplingMethod,
+    /// Number of sample steps. Defaults to `20`.
+    pub steps: usize,
+    /// Image height, in pixel space. Defaults to `512`.
+    pub height: usize,
+    /// Image width, in pixel space. Defaults to `512`.
+    pub width: usize,
+    /// Strength to apply Control Net. Defaults to `0.9`.
+    pub control_strength: f32,
+    /// The image to control the generation.
+    pub control_image: Option<FileObject>,
+    /// RNG seed. Negative value means to use random seed. Defaults to `42`.
+    pub seed: i32,
+    /// Strength for noising/unnoising. Defaults to `0.75`.
+    pub strength: f32,
+    /// Denoiser sigma scheduler. Possible values are `discrete`, `karras`, `exponential`, `ays`, `gits`. Defaults to `discrete`.
+    pub scheduler: Scheduler,
+    /// Apply canny preprocessor. Defaults to `false`.
+    pub apply_canny_preprocessor: bool,
+    /// Strength for keeping input identity. Defaults to `0.2`.
+    pub style_ratio: f32,
+}
+impl Default for ImageCreateParams {
+    fn default() -> Self {
+        Self {
+            negative_prompt: None,
+            model: "".to_string(),
+            n: 1,
+            response_format: ImageResponseFormat::Url,
+            user: None,
+            cfg_scale: 7.0,
+            sample_method: SamplingMethod::EulerA,
+            steps: 20,
+            height: 512,
+            width: 512,
+            control_strength: 0.9,
+            control_image: None,
+            seed: 42,
+            strength: 0.75,
+            scheduler: Scheduler::Discrete,
+            apply_canny_preprocessor: false,
+            style_ratio: 0.2,
         }
     }
 }
