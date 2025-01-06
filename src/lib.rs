@@ -16,14 +16,14 @@
 //! ```
 //!
 //! Then, you can use the following code to send a chat completion request:
-
+//!
 //! ```rust
 //! use endpoints::chat::{
 //!     ChatCompletionRequestMessage, ChatCompletionSystemMessage, ChatCompletionUserMessage,
 //!    ChatCompletionUserMessageContent,
 //! };
 //! use llamaedge::{params::ChatParams, Client};
-
+//!
 //! #[tokio::main]
 //! async fn main() {
 //!     const SERVER_BASE_URL: &str = "http://localhost:8080";
@@ -56,22 +56,25 @@
 pub mod error;
 pub mod params;
 
+#[cfg(feature = "audio")]
+use endpoints::audio::{transcription::TranscriptionObject, translation::TranslationObject};
+#[cfg(feature = "image")]
+use endpoints::images::{ImageCreateRequestBuilder, ImageObject, ListImagesResponse};
 use endpoints::{
-    audio::{transcription::TranscriptionObject, translation::TranslationObject},
     chat::{
         ChatCompletionObject, ChatCompletionRequest, ChatCompletionRequestMessage, StreamOptions,
     },
     embeddings::{EmbeddingRequest, EmbeddingsResponse, InputText},
     files::FileObject,
-    images::{ImageCreateRequestBuilder, ImageObject, ListImagesResponse},
     models::{ListModelsResponse, Model},
 };
 use error::LlamaEdgeError;
 use futures::{stream::TryStream, StreamExt};
-use params::{
-    ChatParams, EmbeddingsParams, ImageCreateParams, ImageEditParams, TranscriptionParams,
-    TranslationParams,
-};
+use params::{ChatParams, EmbeddingsParams};
+#[cfg(feature = "image")]
+use params::{ImageCreateParams, ImageEditParams};
+#[cfg(feature = "audio")]
+use params::{TranscriptionParams, TranslationParams};
 use reqwest::multipart;
 use std::path::Path;
 use url::Url;
