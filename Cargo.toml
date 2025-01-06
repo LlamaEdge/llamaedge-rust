@@ -12,9 +12,7 @@ readme = "README.md"
 documentation = "https://docs.rs/llamaedge/"
 
 [dependencies]
-endpoints = { version = "0.23.0", features = [
-    "full",
-], git = "https://github.com/LlamaEdge/LlamaEdge.git", branch = "dev" }
+endpoints = { version = "0.23.1", features = ["full"] }
 futures = { version = "0.3.6", default-features = false, features = ["async-await", "std"] }
 reqwest = { version = "0.12.0", features = ["json", "stream", "multipart"] }
 serde_json = "1.0.134"
@@ -27,3 +25,7 @@ default = []
 full = ["audio", "image"]
 audio = []
 image = []
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

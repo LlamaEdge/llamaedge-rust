@@ -121,8 +121,9 @@ dependencies = [
 
 [[package]]
 name = "endpoints"
-version = "0.23.0"
-source = "git+https://github.com/LlamaEdge/LlamaEdge.git?branch=dev#296f9ed98f50ad79554df58a087368d69eed4b9a"
+version = "0.23.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95b40cb1797af1e61cbdf80f502ed7a4c9cb11eda79200d941514bee810d8901"
 dependencies = [
  "indexmap",
  "serde",
