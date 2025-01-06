@@ -29,3 +29,26 @@ image = []
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
+
+[[example]]
+name = "chat"
+path = "examples/chat.rs"
+crate-type = ["bin"]
+
+[[example]]
+name = "transcribe_audio"
+path = "examples/transcribe_audio.rs"
+crate-type = ["bin"]
+required-features = ["audio"]
+
+[[example]]
+name = "translate_audio"
+path = "examples/translate_audio.rs"
+crate-type = ["bin"]
+required-features = ["audio"]
+
+[[example]]
+name = "create_image"
+path = "examples/create_image.rs"
+crate-type = ["bin"]
+required-features = ["image"]
