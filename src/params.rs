@@ -1,10 +1,13 @@
 //! Parameters for the chat completion API.
 
+#[cfg(feature = "audio")]
+use endpoints::audio::transcription::TimestampGranularity;
 use endpoints::chat::{ChatResponseFormat, Tool, ToolChoice};
 #[cfg(feature = "image")]
-use endpoints::images::{SamplingMethod, Scheduler};
-#[cfg(feature = "audio")]
-use endpoints::{audio::transcription::TimestampGranularity, files::FileObject};
+use endpoints::{
+    files::FileObject,
+    images::{SamplingMethod, Scheduler},
+};
 #[cfg(feature = "image")]
 use std::path::PathBuf;
 
