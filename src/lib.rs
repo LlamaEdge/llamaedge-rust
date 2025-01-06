@@ -248,6 +248,7 @@ impl Client {
     /// # Returns
     ///
     /// A `Result` containing the transcription object or an error.
+    #[cfg(feature = "audio")]
     pub async fn transcribe(
         &self,
         audio_file: impl AsRef<Path>,
@@ -400,6 +401,7 @@ impl Client {
     /// # Returns
     ///
     /// A `Result` containing the translation object or an error.
+    #[cfg(feature = "audio")]
     pub async fn translate(
         &self,
         audio_file: impl AsRef<Path>,
@@ -680,6 +682,7 @@ impl Client {
     /// # Returns
     ///
     /// A `Result` containing the list of images or an error.
+    #[cfg(feature = "image")]
     pub async fn create_image(
         &self,
         prompt: impl AsRef<str>,
@@ -741,6 +744,7 @@ impl Client {
     /// # Returns
     ///
     /// A `Result` containing the list of images or an error.
+    #[cfg(feature = "image")]
     pub async fn edit_image(
         &self,
         image: impl AsRef<Path>,

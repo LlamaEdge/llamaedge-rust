@@ -21,3 +21,9 @@ serde_json = "1.0.134"
 thiserror = "2"
 tokio = { version = "1.39.0", features = ["full"] }
 url = "2.5.4"
+
+[features]
+default = []
+full = ["audio", "image"]
+audio = []
+image = []

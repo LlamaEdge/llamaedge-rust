@@ -1,42 +1,46 @@
-use llamaedge::{
-    params::{TranscriptionParams, TranslationParams},
-    Client,
-};
+#[cfg(feature = "audio")]
+mod tests {
 
-const SERVER_BASE_URL: &str = "http://localhost:8080";
+    use llamaedge::{
+        params::{TranscriptionParams, TranslationParams},
+        Client,
+    };
 
-#[tokio::test]
-async fn test_audio_transcribe() {
-    let client = Client::new(SERVER_BASE_URL).unwrap();
+    const SERVER_BASE_URL: &str = "http://localhost:8080";
 
-    let result = client
-        .transcribe(
-            "tests/assets/test.wav",
-            "en",
-            TranscriptionParams::default(),
-        )
-        .await;
-    assert!(result.is_ok());
+    #[tokio::test]
+    async fn test_audio_transcribe() {
+        let client = Client::new(SERVER_BASE_URL).unwrap();
 
-    let transcription = result.unwrap();
-    let text = transcription.text.to_lowercase();
-    assert!(text.contains("this is a test record for whisper.cpp"));
-}
+        let result = client
+            .transcribe(
+                "tests/assets/test.wav",
+                "en",
+                TranscriptionParams::default(),
+            )
+            .await;
+        assert!(result.is_ok());
 
-#[tokio::test]
-async fn test_audio_translate() {
-    let client = Client::new(SERVER_BASE_URL).unwrap();
+        let transcription = result.unwrap();
+        let text = transcription.text.to_lowercase();
+        assert!(text.contains("this is a test record for whisper.cpp"));
+    }
 
-    let result = client
-        .translate(
-            "tests/assets/test_zh.wav",
-            "zh",
-            TranslationParams::default(),
-        )
-        .await;
-    assert!(result.is_ok());
+    #[tokio::test]
+    async fn test_audio_translate() {
+        let client = Client::new(SERVER_BASE_URL).unwrap();
 
-    let translation = result.unwrap();
-    let text = translation.text.to_lowercase();
-    assert!(text.to_lowercase().contains("this is a chinese broadcast."));
+        let result = client
+            .translate(
+                "tests/assets/test_zh.wav",
+                "zh",
+                TranslationParams::default(),
+            )
+            .await;
+        assert!(result.is_ok());
+
+        let translation = result.unwrap();
+        let text = translation.text.to_lowercase();
+        assert!(text.to_lowercase().contains("this is a chinese broadcast."));
+    }
 }
