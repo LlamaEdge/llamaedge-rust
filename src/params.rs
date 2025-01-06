@@ -1,13 +1,14 @@
 //! Parameters for the chat completion API.
 
-use endpoints::{
-    audio::transcription::TimestampGranularity,
-    chat::{ChatResponseFormat, Tool, ToolChoice},
-    files::FileObject,
-    images::{SamplingMethod, Scheduler},
-};
+use endpoints::chat::{ChatResponseFormat, Tool, ToolChoice};
+#[cfg(feature = "image")]
+use endpoints::images::{SamplingMethod, Scheduler};
+#[cfg(feature = "audio")]
+use endpoints::{audio::transcription::TimestampGranularity, files::FileObject};
+#[cfg(feature = "image")]
 use std::path::PathBuf;
 
+#[cfg(feature = "image")]
 pub type ImageResponseFormat = endpoints::images::ResponseFormat;
 
 /// Parameters for the chat completion API.
@@ -163,6 +164,7 @@ impl Default for RagChatParams {
 }
 
 /// Parameters for the transcription API.
+#[cfg(feature = "audio")]
 #[derive(Debug, Clone)]
 pub struct TranscriptionParams {
     /// ID of the model to use.
@@ -192,6 +194,7 @@ pub struct TranscriptionParams {
     /// Use the new computation context. Defaults to false.
     pub use_new_context: bool,
 }
+#[cfg(feature = "audio")]
 impl Default for TranscriptionParams {
     fn default() -> Self {
         Self {
@@ -212,6 +215,7 @@ impl Default for TranscriptionParams {
 }
 
 /// Parameters for the translation API.
+#[cfg(feature = "audio")]
 #[derive(Debug, Clone)]
 pub struct TranslationParams {
     /// ID of the model to use.
@@ -237,6 +241,7 @@ pub struct TranslationParams {
     /// Use the new computation context. Defaults to false.
     pub use_new_context: bool,
 }
+#[cfg(feature = "audio")]
 impl Default for TranslationParams {
     fn default() -> Self {
         Self {
@@ -286,6 +291,7 @@ impl Default for EmbeddingsParams {
 }
 
 /// Parameters for the image generation API.
+#[cfg(feature = "image")]
 #[derive(Debug, Clone)]
 pub struct ImageCreateParams {
     /// Negative prompt for the image generation.
@@ -323,6 +329,7 @@ pub struct ImageCreateParams {
     /// Strength for keeping input identity. Defaults to `0.2`.
     pub style_ratio: f32,
 }
+#[cfg(feature = "image")]
 impl Default for ImageCreateParams {
     fn default() -> Self {
         Self {
@@ -348,6 +355,7 @@ impl Default for ImageCreateParams {
 }
 
 /// Parameters for the image edit API.
+#[cfg(feature = "image")]
 #[derive(Debug, Clone)]
 pub struct ImageEditParams {
     /// Negative prompt for the image generation.
@@ -387,6 +395,7 @@ pub struct ImageEditParams {
     /// Strength for keeping input identity. Defaults to `0.2`.
     pub style_ratio: f32,
 }
+#[cfg(feature = "image")]
 impl Default for ImageEditParams {
     fn default() -> Self {
         Self {

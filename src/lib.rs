@@ -53,6 +53,8 @@
 //!
 //! **Note:** To run the example, LlamaEdge API server should be deployed and running on your local machine. Refer to [Quick Start](https://github.com/LlamaEdge/LlamaEdge?tab=readme-ov-file#quick-start) for more details on how to deploy and run the server.
 
+#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+
 pub mod error;
 pub mod params;
 
@@ -236,6 +238,136 @@ impl Client {
         });
 
         Ok(stream)
+    }
+
+    /// Upload a file to the server.
+    ///
+    /// # Arguments
+    ///
+    /// * `file` - The file to upload.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the file object or an error.
+    pub async fn upload_file(&self, file: impl AsRef<Path>) -> Result<FileObject, LlamaEdgeError> {
+        let abs_file_path = if file.as_ref().is_absolute() {
+            file.as_ref().to_path_buf()
+        } else {
+            std::env::current_dir().unwrap().join(file.as_ref())
+        };
+
+        // check if the file exists
+        if !abs_file_path.exists() {
+            return Err(LlamaEdgeError::InvalidArgument(
+                "The file does not exist".to_string(),
+            ));
+        }
+
+        // get the filename
+        let filename = abs_file_path
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+
+        // get the file extension
+        let file_extension = abs_file_path
+            .extension()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+
+        let file = tokio::fs::read(abs_file_path)
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(format!("Failed to read audio file: {}", e)))?;
+        let file_part = multipart::Part::bytes(file)
+            .file_name(filename)
+            .mime_str(&format!("audio/{}", file_extension))
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        let form = multipart::Form::new().part("file", file_part);
+
+        // upload the audio file
+        let url = self.server_base_url.join("/v1/files")?;
+        let response = reqwest::Client::new()
+            .post(url)
+            .multipart(form)
+            .send()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        // get the file object
+        let file_object = response
+            .json::<FileObject>()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        Ok(file_object)
+    }
+
+    /// List all available models.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the list of models or an error.
+    pub async fn models(&self) -> Result<Vec<Model>, LlamaEdgeError> {
+        let url = self.server_base_url.join("/v1/models")?;
+        let response = reqwest::Client::new()
+            .get(url)
+            .send()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+        let list_models_response = response
+            .json::<ListModelsResponse>()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        Ok(list_models_response.data)
+    }
+
+    /// Compute embeddings for a given input.
+    ///
+    /// # Arguments
+    ///
+    /// * `input` - The input to compute embeddings for.
+    ///
+    /// * `params` - The parameters for the embeddings.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the embeddings or an error.
+    pub async fn embeddings(
+        &self,
+        input: InputText,
+        params: EmbeddingsParams,
+    ) -> Result<EmbeddingsResponse, LlamaEdgeError> {
+        let url = self.server_base_url.join("/v1/embeddings")?;
+
+        let request = EmbeddingRequest {
+            input,
+            model: params.model,
+            encoding_format: Some(params.encoding_format),
+            user: params.user,
+            vdb_server_url: params.vdb_server_url,
+            vdb_collection_name: params.vdb_collection_name,
+            vdb_api_key: params.vdb_api_key,
+        };
+
+        let response = reqwest::Client::new()
+            .post(url)
+            .json(&request)
+            .send()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        let embeddings_response = response
+            .json::<EmbeddingsResponse>()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        Ok(embeddings_response)
     }
 
     /// Transcribe an audio file.
@@ -542,136 +674,6 @@ impl Client {
             .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
 
         Ok(translation_object)
-    }
-
-    /// Upload a file to the server.
-    ///
-    /// # Arguments
-    ///
-    /// * `file` - The file to upload.
-    ///
-    /// # Returns
-    ///
-    /// A `Result` containing the file object or an error.
-    pub async fn upload_file(&self, file: impl AsRef<Path>) -> Result<FileObject, LlamaEdgeError> {
-        let abs_file_path = if file.as_ref().is_absolute() {
-            file.as_ref().to_path_buf()
-        } else {
-            std::env::current_dir().unwrap().join(file.as_ref())
-        };
-
-        // check if the file exists
-        if !abs_file_path.exists() {
-            return Err(LlamaEdgeError::InvalidArgument(
-                "The file does not exist".to_string(),
-            ));
-        }
-
-        // get the filename
-        let filename = abs_file_path
-            .file_name()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string();
-
-        // get the file extension
-        let file_extension = abs_file_path
-            .extension()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string();
-
-        let file = tokio::fs::read(abs_file_path)
-            .await
-            .map_err(|e| LlamaEdgeError::Operation(format!("Failed to read audio file: {}", e)))?;
-        let file_part = multipart::Part::bytes(file)
-            .file_name(filename)
-            .mime_str(&format!("audio/{}", file_extension))
-            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
-
-        let form = multipart::Form::new().part("file", file_part);
-
-        // upload the audio file
-        let url = self.server_base_url.join("/v1/files")?;
-        let response = reqwest::Client::new()
-            .post(url)
-            .multipart(form)
-            .send()
-            .await
-            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
-
-        // get the file object
-        let file_object = response
-            .json::<FileObject>()
-            .await
-            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
-
-        Ok(file_object)
-    }
-
-    /// List all available models.
-    ///
-    /// # Returns
-    ///
-    /// A `Result` containing the list of models or an error.
-    pub async fn models(&self) -> Result<Vec<Model>, LlamaEdgeError> {
-        let url = self.server_base_url.join("/v1/models")?;
-        let response = reqwest::Client::new()
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
-        let list_models_response = response
-            .json::<ListModelsResponse>()
-            .await
-            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
-
-        Ok(list_models_response.data)
-    }
-
-    /// Compute embeddings for a given input.
-    ///
-    /// # Arguments
-    ///
-    /// * `input` - The input to compute embeddings for.
-    ///
-    /// * `params` - The parameters for the embeddings.
-    ///
-    /// # Returns
-    ///
-    /// A `Result` containing the embeddings or an error.
-    pub async fn embeddings(
-        &self,
-        input: InputText,
-        params: EmbeddingsParams,
-    ) -> Result<EmbeddingsResponse, LlamaEdgeError> {
-        let url = self.server_base_url.join("/v1/embeddings")?;
-
-        let request = EmbeddingRequest {
-            input,
-            model: params.model,
-            encoding_format: Some(params.encoding_format),
-            user: params.user,
-            vdb_server_url: params.vdb_server_url,
-            vdb_collection_name: params.vdb_collection_name,
-            vdb_api_key: params.vdb_api_key,
-        };
-
-        let response = reqwest::Client::new()
-            .post(url)
-            .json(&request)
-            .send()
-            .await
-            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
-
-        let embeddings_response = response
-            .json::<EmbeddingsResponse>()
-            .await
-            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
-
-        Ok(embeddings_response)
     }
 
     /// Create an image with the given prompt.
