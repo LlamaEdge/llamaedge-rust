@@ -63,7 +63,11 @@ use endpoints::audio::{transcription::TranscriptionObject, translation::Translat
 #[cfg(feature = "image")]
 use endpoints::images::{ImageCreateRequestBuilder, ImageObject, ListImagesResponse};
 #[cfg(feature = "rag")]
-use endpoints::{chat::ChatCompletionRequestBuilder, rag::RetrieveObject};
+use endpoints::{
+    chat::ChatCompletionRequestBuilder,
+    embeddings::{ChunksRequest, ChunksResponse},
+    rag::RetrieveObject,
+};
 use endpoints::{
     chat::{
         ChatCompletionObject, ChatCompletionRequest, ChatCompletionRequestMessage, StreamOptions,
@@ -1078,5 +1082,51 @@ impl Client {
             .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
 
         Ok(rag_context_response)
+    }
+
+    /// Chunk a text file into chunks.
+    ///
+    /// # Arguments
+    ///
+    /// * `file_path` - The path to the file to chunk. Note that the file should be a `txt` or `md` file.
+    ///
+    /// * `chunk_capacity` - The capacity of each chunk.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the chunks or an error.
+    #[cfg(feature = "rag")]
+    pub async fn rag_chunk_file(
+        &self,
+        file_path: impl AsRef<Path>,
+        chunk_capacity: usize,
+    ) -> Result<ChunksResponse, LlamaEdgeError> {
+        let url = self.server_base_url.join("/v1/chunks")?;
+
+        // upload the file
+        let fo = self.upload_file(file_path.as_ref()).await?;
+
+        // create request
+        let chunks_request = ChunksRequest {
+            id: fo.id,
+            filename: fo.filename,
+            chunk_capacity,
+        };
+
+        // send request
+        let response = reqwest::Client::new()
+            .post(url)
+            .json(&chunks_request)
+            .send()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        // parse the response
+        let chunks_response = response
+            .json::<ChunksResponse>()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        Ok(chunks_response)
     }
 }

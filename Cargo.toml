@@ -70,3 +70,9 @@ name = "rag_embeddings"
 path = "examples/rag_embeddings.rs"
 crate-type = ["bin"]
 required-features = ["rag"]
+
+[[example]]
+name = "rag_chunk_file"
+path = "examples/rag_chunk_file.rs"
+crate-type = ["bin"]
+required-features = ["rag"]
