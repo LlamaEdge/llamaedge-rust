@@ -280,10 +280,13 @@ pub struct EmbeddingsParams {
     /// A unique identifier representing your end-user.
     pub user: Option<String>,
     /// The URL of the VectorDB server.
+    #[cfg(feature = "rag")]
     pub vdb_server_url: Option<String>,
     /// The name of the collection in VectorDB.
+    #[cfg(feature = "rag")]
     pub vdb_collection_name: Option<String>,
     /// The API key for the VectorDB server.
+    #[cfg(feature = "rag")]
     pub vdb_api_key: Option<String>,
 }
 impl Default for EmbeddingsParams {
@@ -292,8 +295,11 @@ impl Default for EmbeddingsParams {
             model: None,
             encoding_format: "float".to_string(),
             user: None,
+            #[cfg(feature = "rag")]
             vdb_server_url: None,
+            #[cfg(feature = "rag")]
             vdb_collection_name: None,
+            #[cfg(feature = "rag")]
             vdb_api_key: None,
         }
     }

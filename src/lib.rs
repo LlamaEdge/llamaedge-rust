@@ -62,19 +62,21 @@ pub mod params;
 use endpoints::audio::{transcription::TranscriptionObject, translation::TranslationObject};
 #[cfg(feature = "image")]
 use endpoints::images::{ImageCreateRequestBuilder, ImageObject, ListImagesResponse};
+#[cfg(feature = "rag")]
+use endpoints::{chat::ChatCompletionRequestBuilder, rag::RetrieveObject};
 use endpoints::{
     chat::{
-        ChatCompletionObject, ChatCompletionRequest, ChatCompletionRequestBuilder,
-        ChatCompletionRequestMessage, StreamOptions,
+        ChatCompletionObject, ChatCompletionRequest, ChatCompletionRequestMessage, StreamOptions,
     },
     embeddings::{EmbeddingRequest, EmbeddingsResponse, InputText},
     files::FileObject,
     models::{ListModelsResponse, Model},
-    rag::RetrieveObject,
 };
 use error::LlamaEdgeError;
 use futures::{stream::TryStream, StreamExt};
-use params::{ChatParams, EmbeddingsParams, RagChatParams};
+#[cfg(feature = "rag")]
+use params::RagChatParams;
+use params::{ChatParams, EmbeddingsParams};
 #[cfg(feature = "image")]
 use params::{ImageCreateParams, ImageEditParams};
 #[cfg(feature = "audio")]
@@ -352,8 +354,11 @@ impl Client {
             model: params.model,
             encoding_format: Some(params.encoding_format),
             user: params.user,
+            #[cfg(feature = "rag")]
             vdb_server_url: params.vdb_server_url,
+            #[cfg(feature = "rag")]
             vdb_collection_name: params.vdb_collection_name,
+            #[cfg(feature = "rag")]
             vdb_api_key: params.vdb_api_key,
         };
 
