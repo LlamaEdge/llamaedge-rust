@@ -28,7 +28,7 @@ async fn main() {
 
     // send chat completion request
     if let Ok(res) = client
-        .retrieve_rag_context(&messages[..], RagChatParams::default())
+        .rag_retrieve_context(&messages[..], RagChatParams::default())
         .await
     {
         println!("Retrieved context:\n{:#?}", res);

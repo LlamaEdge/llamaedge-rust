@@ -1020,7 +1020,7 @@ impl Client {
     ///
     /// A `Result` containing the retrieved context or an error.
     #[cfg(feature = "rag")]
-    pub async fn retrieve_rag_context(
+    pub async fn rag_retrieve_context(
         &self,
         chat_history: &[ChatCompletionRequestMessage],
         params: RagChatParams,
