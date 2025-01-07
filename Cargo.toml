@@ -37,6 +37,11 @@ path = "examples/chat.rs"
 crate-type = ["bin"]
 
 [[example]]
+name = "embeddings"
+path = "examples/embeddings.rs"
+crate-type = ["bin"]
+
+[[example]]
 name = "transcribe_audio"
 path = "examples/transcribe_audio.rs"
 crate-type = ["bin"]
@@ -57,5 +62,11 @@ required-features = ["image"]
 [[example]]
 name = "rag_retrieve_context"
 path = "examples/rag_retrieve_context.rs"
+crate-type = ["bin"]
+required-features = ["rag"]
+
+[[example]]
+name = "rag_embeddings"
+path = "examples/rag_embeddings.rs"
 crate-type = ["bin"]
 required-features = ["rag"]
