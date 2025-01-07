@@ -64,15 +64,17 @@ use endpoints::audio::{transcription::TranscriptionObject, translation::Translat
 use endpoints::images::{ImageCreateRequestBuilder, ImageObject, ListImagesResponse};
 use endpoints::{
     chat::{
-        ChatCompletionObject, ChatCompletionRequest, ChatCompletionRequestMessage, StreamOptions,
+        ChatCompletionObject, ChatCompletionRequest, ChatCompletionRequestBuilder,
+        ChatCompletionRequestMessage, StreamOptions,
     },
     embeddings::{EmbeddingRequest, EmbeddingsResponse, InputText},
     files::FileObject,
     models::{ListModelsResponse, Model},
+    rag::RetrieveObject,
 };
 use error::LlamaEdgeError;
 use futures::{stream::TryStream, StreamExt};
-use params::{ChatParams, EmbeddingsParams};
+use params::{ChatParams, EmbeddingsParams, RagChatParams};
 #[cfg(feature = "image")]
 use params::{ImageCreateParams, ImageEditParams};
 #[cfg(feature = "audio")]
@@ -999,5 +1001,77 @@ impl Client {
             .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
 
         Ok(list_images_response.data)
+    }
+
+    /// Retrieve the context from the VectorDB server.
+    ///
+    /// # Arguments
+    ///
+    /// * `chat_history` - The chat history.
+    ///
+    /// * `params` - The parameters for the retrieval.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the retrieved context or an error.
+    #[cfg(feature = "rag")]
+    pub async fn retrieve_rag_context(
+        &self,
+        chat_history: &[ChatCompletionRequestMessage],
+        params: RagChatParams,
+    ) -> Result<Vec<RetrieveObject>, LlamaEdgeError> {
+        let url = self.server_base_url.join("/v1/retrieve")?;
+
+        // build the request
+        let mut builder = ChatCompletionRequestBuilder::new(chat_history)
+            .with_n_choices(params.n_choice)
+            .with_max_tokens(params.max_tokens)
+            .with_presence_penalty(params.presence_penalty)
+            .with_frequency_penalty(params.frequency_penalty)
+            .with_rag_context_window(params.context_window);
+
+        if let Some(model) = params.model {
+            builder = builder.with_model(model);
+        }
+        if let Some(user) = params.user {
+            builder = builder.with_user(user);
+        }
+        if let Some(response_format) = params.response_format {
+            builder = builder.with_reponse_format(response_format);
+        }
+        if let Some(tools) = params.tools {
+            builder = builder.with_tools(tools);
+        }
+        if let Some(tool_choice) = params.tool_choice {
+            builder = builder.with_tool_choice(tool_choice);
+        }
+        if let Some(vdb_config) = params.vdb_config {
+            builder = builder.with_rag_vdb_settings(
+                vdb_config.server_url,
+                vdb_config.collection_name,
+                vdb_config.limit,
+                vdb_config.score_threshold,
+                vdb_config.api_key,
+            );
+        }
+        let mut request = builder.build();
+        request.temperature = Some(params.temperature);
+        request.top_p = Some(params.top_p);
+
+        // send the request
+        let response = reqwest::Client::new()
+            .post(url)
+            .json(&request)
+            .send()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        // parse the response
+        let rag_context_response = response
+            .json::<Vec<RetrieveObject>>()
+            .await
+            .map_err(|e| LlamaEdgeError::Operation(e.to_string()))?;
+
+        Ok(rag_context_response)
     }
 }
