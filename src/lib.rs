@@ -154,8 +154,7 @@ impl Client {
             top_p: params.top_p,
             n_choice: params.n_choice,
             stop: params.stop.clone(),
-            max_tokens: params.max_tokens,
-            // max_completion_tokens: params.max_completion_tokens,
+            max_completion_tokens: params.max_completion_tokens,
             presence_penalty: params.presence_penalty,
             frequency_penalty: params.frequency_penalty,
             user: params.user.clone(),
@@ -217,8 +216,7 @@ impl Client {
             top_p: params.top_p,
             n_choice: params.n_choice,
             stop: params.stop.clone(),
-            max_tokens: params.max_tokens,
-            // max_completion_tokens: params.max_completion_tokens,
+            max_completion_tokens: params.max_completion_tokens,
             presence_penalty: params.presence_penalty,
             frequency_penalty: params.frequency_penalty,
             user: params.user.clone(),
@@ -1034,7 +1032,7 @@ impl Client {
         // build the request
         let mut builder = ChatCompletionRequestBuilder::new(chat_history)
             .with_n_choices(params.n_choice)
-            .with_max_tokens(params.max_tokens)
+            .with_max_completion_tokens(params.max_completion_tokens)
             .with_presence_penalty(params.presence_penalty)
             .with_frequency_penalty(params.frequency_penalty)
             .with_rag_context_window(params.context_window);
