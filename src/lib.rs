@@ -109,9 +109,7 @@ impl Client {
             Ok(url) => Ok(Self {
                 server_base_url: url,
             }),
-            Err(e) => {
-                return Err(LlamaEdgeError::UrlParse(e));
-            }
+            Err(e) => Err(LlamaEdgeError::UrlParse(e)),
         }
     }
 
